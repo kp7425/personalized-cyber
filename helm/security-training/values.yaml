@@ -1,0 +1,72 @@
+global:
+  namespace: security-training
+  trustDomain: security-training.example.org
+  collectorImage: "security-training-app:latest"
+  imagePullPolicy: "Never"
+
+spire:
+  server:
+    image: ghcr.io/spiffe/spire-server:1.8.5
+    svid_ttl: "1h"
+    ca_ttl: "24h"
+    log_level: DEBUG
+  agent:
+    image: ghcr.io/spiffe/spire-agent:1.8.5
+
+collectors:
+  - name: git-collector
+    port: 8501
+    serviceAccount: git-collector-sa
+    spiffeId: git-collector
+    env: []
+    
+  - name: jira-collector
+    port: 8502
+    serviceAccount: jira-collector-sa
+    spiffeId: jira-collector
+    env: []
+    
+  - name: iam-collector
+    port: 8503
+    serviceAccount: iam-collector-sa
+    spiffeId: iam-collector
+    
+  - name: siem-collector
+    port: 8504
+    serviceAccount: siem-collector-sa
+    spiffeId: siem-collector
+
+engine:
+  riskScorer:
+    port: 8510
+    replicas: 1
+    image: python:3.11-slim
+  recommender:
+    port: 8511
+    replicas: 1
+    image: python:3.11-slim
+
+gateway:
+  llm:
+    port: 8520
+    backend: gemini
+    model: gemini-2.0-flash
+    image: python:3.11-slim
+
+lms:
+  port: 8080
+  replicas: 1
+  image: python:3.11-slim
+
+database:
+  host: postgres-svc
+  port: 5432
+  name: security_training
+  user: postgres
+  passwordSecret: db-credentials
+  passwordKey: password
+
+secrets:
+  createDefaults: true
+  dbPassword: postgres
+  geminiApiKey: ""  # Set via --set secrets.geminiApiKey=YOUR_KEY

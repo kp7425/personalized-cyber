@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spire-server
+  namespace: {{ .Values.global.namespace }}
+data:
+  server.conf: |
+    server {
+      bind_address = "0.0.0.0"
+      bind_port = "8081"
+      trust_domain = "{{ .Values.global.trustDomain }}"
+      data_dir = "/run/spire/data"
+      log_level = "{{ .Values.spire.server.log_level }}"
+      ca_ttl = "{{ .Values.spire.server.ca_ttl }}"
+      default_x509_svid_ttl = "{{ .Values.spire.server.svid_ttl }}"
+    }
+
+    plugins {
+      DataStore "sql" {
+        plugin_data {
+          database_type = "sqlite3"
+          connection_string = "/run/spire/data/datastore.sqlite3"
+        }
+      }
+
+      NodeAttestor "k8s_psat" {
+        plugin_data {
+          clusters = {
+            "demo-cluster" = {
+              service_account_allow_list = ["{{ .Values.global.namespace }}:spire-agent"]
+            }
+          }
+        }
+      }
+
+      KeyManager "memory" {
+        plugin_data {}
+      }
+
+      # Self-signed CA - no external certificates required
+      # SPIRE will auto-generate its own CA on first boot
+    }

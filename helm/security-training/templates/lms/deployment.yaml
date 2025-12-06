@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: lms-sa
+  namespace: {{ .Values.global.namespace }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lms
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: lms
+spec:
+  replicas: {{ .Values.lms.replicas }}
+  selector:
+    matchLabels:
+      app: lms
+  template:
+    metadata:
+      labels:
+        app: lms
+    spec:
+      serviceAccountName: lms-sa
+      containers:
+      - name: lms
+        image: {{ .Values.global.collectorImage }}
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            pip install -r /app/requirements.txt
+            streamlit run /app/src/lms/app.py --server.port={{ .Values.lms.port }} --server.address=0.0.0.0
+        ports:
+        - containerPort: {{ .Values.lms.port }}
+        env:
+        - name: SPIFFE_ENDPOINT_SOCKET
+          value: "unix:///opt/spire/sockets/agent.sock"
+        - name: DB_HOST
+          value: "{{ .Values.database.host }}"
+        - name: DB_NAME
+          value: "{{ .Values.database.name }}"
+        - name: DB_USER
+          value: "{{ .Values.database.user }}"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Values.database.passwordSecret }}"
+              key: "{{ .Values.database.passwordKey }}"
+        - name: GEMINI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: "llm-secrets"
+              key: "api-key"
+              optional: true
+        - name: LLM_GATEWAY_URL
+          value: "http://llm-gateway-svc:{{ .Values.gateway.llm.port }}"
+        - name: RISK_SCORER_URL
+          value: "http://risk-scorer-svc:{{ .Values.engine.riskScorer.port }}"
+        volumeMounts:
+        - name: spire-agent-socket
+          mountPath: /opt/spire/sockets
+          readOnly: true
+      volumes:
+      - name: spire-agent-socket
+        hostPath:
+          path: /opt/spire/sockets
+          type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lms
+  namespace: {{ .Values.global.namespace }}
+spec:
+  selector:
+    app: lms
+  ports:
+  - port: {{ .Values.lms.port }}
+    targetPort: {{ .Values.lms.port }}

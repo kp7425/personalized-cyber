@@ -1,0 +1,82 @@
+{{- range .Values.collectors }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .serviceAccount }}
+  namespace: {{ $.Values.global.namespace }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .name }}
+  namespace: {{ $.Values.global.namespace }}
+  labels:
+    app: {{ .name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .name }}
+    spec:
+      serviceAccountName: {{ .serviceAccount }}
+      containers:
+      - name: {{ .name }}
+        image: {{ $.Values.global.collectorImage }}
+        imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            pip install -r /app/requirements.txt
+            python /app/src/collectors/{{ .name | replace "-" "_" }}.py
+        ports:
+        - containerPort: {{ .port }}
+        env:
+        - name: SPIFFE_ENDPOINT_SOCKET
+          value: "unix:///opt/spire/sockets/agent.sock"
+        - name: DB_HOST
+          value: "{{ $.Values.database.host }}"
+        - name: DB_NAME
+          value: "{{ $.Values.database.name }}"
+        - name: DB_USER
+          value: "{{ $.Values.database.user }}"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: "{{ $.Values.database.passwordSecret }}"
+              key: "{{ $.Values.database.passwordKey }}"
+        - name: GEMINI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: "llm-secrets"
+              key: "api-key"
+              optional: true
+        {{- if .env }}
+        {{- toYaml .env | nindent 8 }}
+        {{- end }}
+        volumeMounts:
+        - name: spire-agent-socket
+          mountPath: /opt/spire/sockets
+          readOnly: true
+      volumes:
+      - name: spire-agent-socket
+        hostPath:
+          path: /opt/spire/sockets
+          type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .name }}-svc
+  namespace: {{ $.Values.global.namespace }}
+spec:
+  selector:
+    app: {{ .name }}
+  ports:
+  - port: {{ .port }}
+    targetPort: {{ .port }}
+{{- end }}

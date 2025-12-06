@@ -1,0 +1,217 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: {{ .Values.global.namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-initdb
+  namespace: {{ .Values.global.namespace }}
+data:
+  schema.sql: |
+    -- User identity from Workday
+    CREATE TABLE IF NOT EXISTS users (
+        user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        workday_id VARCHAR(50) UNIQUE NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        full_name VARCHAR(255),
+        department VARCHAR(100),
+        job_title VARCHAR(100),
+        job_profile VARCHAR(100),
+        tech_stack JSONB,
+        manager_workday_id VARCHAR(50),
+        hire_date DATE,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+    );
+
+    -- Aggregated risk profile per user
+    CREATE TABLE IF NOT EXISTS user_risk_profiles (
+        profile_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID REFERENCES users(user_id),
+        secrets_committed_count INT DEFAULT 0,
+        force_pushes_count INT DEFAULT 0,
+        commits_without_review INT DEFAULT 0,
+        security_tickets_created INT DEFAULT 0,
+        security_tickets_assigned INT DEFAULT 0,
+        overdue_security_tasks INT DEFAULT 0,
+        privilege_escalation_events INT DEFAULT 0,
+        unused_permissions_count INT DEFAULT 0,
+        mfa_disabled_services INT DEFAULT 0,
+        cross_account_access_count INT DEFAULT 0,
+        security_alerts_triggered INT DEFAULT 0,
+        phishing_clicks INT DEFAULT 0,
+        malware_detections INT DEFAULT 0,
+        policy_violations INT DEFAULT 0,
+        training_modules_completed INT DEFAULT 0,
+        training_modules_overdue INT DEFAULT 0,
+        last_training_date DATE,
+        git_risk_score DECIMAL(3,2) DEFAULT 0.00,
+        iam_risk_score DECIMAL(3,2) DEFAULT 0.00,
+        security_incident_score DECIMAL(3,2) DEFAULT 0.00,
+        training_gap_score DECIMAL(3,2) DEFAULT 0.00,
+        overall_risk_score DECIMAL(3,2) DEFAULT 0.00,
+        last_calculated_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(user_id)
+    );
+
+    -- Git activity events
+    CREATE TABLE IF NOT EXISTS git_activity (
+        event_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID REFERENCES users(user_id),
+        event_type VARCHAR(50) NOT NULL,
+        repository VARCHAR(255),
+        branch VARCHAR(255),
+        commit_sha VARCHAR(40),
+        secret_type VARCHAR(100),
+        event_timestamp TIMESTAMP NOT NULL,
+        raw_data JSONB,
+        created_at TIMESTAMP DEFAULT NOW()
+    );
+
+    -- Jira activity
+    CREATE TABLE IF NOT EXISTS jira_activity (
+        event_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID REFERENCES users(user_id),
+        event_type VARCHAR(50) NOT NULL,
+        ticket_key VARCHAR(50),
+        ticket_type VARCHAR(50),
+        priority VARCHAR(20),
+        status VARCHAR(50),
+        due_date DATE,
+        event_timestamp TIMESTAMP NOT NULL,
+        raw_data JSONB,
+        created_at TIMESTAMP DEFAULT NOW()
+    );
+
+    -- Cloud IAM events (AWS, Azure, GCP unified)
+    CREATE TABLE IF NOT EXISTS iam_events (
+        event_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID REFERENCES users(user_id),
+        cloud_provider VARCHAR(10) NOT NULL,
+        event_type VARCHAR(100) NOT NULL,
+        resource_arn VARCHAR(500),
+        action VARCHAR(100),
+        is_privileged BOOLEAN DEFAULT FALSE,
+        event_timestamp TIMESTAMP NOT NULL,
+        source_ip INET,
+        user_agent TEXT,
+        raw_data JSONB,
+        created_at TIMESTAMP DEFAULT NOW()
+    );
+
+    -- SIEM alerts
+    CREATE TABLE IF NOT EXISTS siem_alerts (
+        alert_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID REFERENCES users(user_id),
+        alert_type VARCHAR(100) NOT NULL,
+        severity VARCHAR(20),
+        source_system VARCHAR(100),
+        alert_name VARCHAR(255),
+        description TEXT,
+        remediation_status VARCHAR(50),
+        event_timestamp TIMESTAMP NOT NULL,
+        raw_data JSONB,
+        created_at TIMESTAMP DEFAULT NOW()
+    );
+
+    -- Training completions
+    CREATE TABLE IF NOT EXISTS training_completions (
+        completion_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID REFERENCES users(user_id),
+        module_id VARCHAR(100) NOT NULL,
+        module_name VARCHAR(255),
+        module_category VARCHAR(100),
+        score DECIMAL(5,2),
+        passed BOOLEAN,
+        time_spent_minutes INT,
+        completed_at TIMESTAMP NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+    );
+
+    -- Risk score history (for trending)
+    CREATE TABLE IF NOT EXISTS risk_scores_history (
+        history_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID REFERENCES users(user_id),
+        overall_risk_score DECIMAL(3,2),
+        git_risk_score DECIMAL(3,2),
+        iam_risk_score DECIMAL(3,2),
+        security_incident_score DECIMAL(3,2),
+        training_gap_score DECIMAL(3,2),
+        calculated_at TIMESTAMP NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+    );
+
+    -- Indexes
+    CREATE INDEX IF NOT EXISTS idx_git_activity_user_timestamp ON git_activity(user_id, event_timestamp);
+    CREATE INDEX IF NOT EXISTS idx_jira_activity_user_timestamp ON jira_activity(user_id, event_timestamp);
+    CREATE INDEX IF NOT EXISTS idx_iam_events_user_timestamp ON iam_events(user_id, event_timestamp);
+    CREATE INDEX IF NOT EXISTS idx_siem_alerts_user_timestamp ON siem_alerts(user_id, event_timestamp);
+    CREATE INDEX IF NOT EXISTS idx_risk_profiles_overall_score ON user_risk_profiles(overall_risk_score DESC);
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: "{{ .Values.database.name }}"
+        - name: POSTGRES_USER
+          value: "{{ .Values.database.user }}"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Values.database.passwordSecret }}"
+              key: "{{ .Values.database.passwordKey }}"
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        - name: initdb
+          mountPath: /docker-entrypoint-initdb.d
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: postgres-pvc
+      - name: initdb
+        configMap:
+          name: postgres-initdb
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-svc
+  namespace: {{ .Values.global.namespace }}
+spec:
+  selector:
+    app: postgres
+  ports:
+  - port: 5432
+    targetPort: 5432

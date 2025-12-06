@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spire-agent
+  namespace: {{ .Values.global.namespace }}
+data:
+  agent.conf: |
+    agent {
+      data_dir = "/run/spire"
+      log_level = "DEBUG"
+      server_address = "spire-server"
+      server_port = "8081"
+      socket_path = "/run/spire/sockets/agent.sock"
+      trust_domain = "{{ .Values.global.trustDomain }}"
+      insecure_bootstrap = true
+    }
+
+    plugins {
+      NodeAttestor "k8s_psat" {
+        plugin_data {
+          cluster = "demo-cluster"
+        }
+      }
+
+      KeyManager "disk" {
+        plugin_data {
+          keys_path = "/run/spire/data/keys"
+        }
+      }
+
+      WorkloadAttestor "k8s" {
+        plugin_data {
+          skip_kubelet_verification = true
+        }
+      }
+      
+      WorkloadAttestor "unix" {
+          plugin_data {
+          }
+      }
+    }

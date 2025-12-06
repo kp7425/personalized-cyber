@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: llm-gateway-sa
+  namespace: {{ .Values.global.namespace }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-gateway
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: llm-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: llm-gateway
+  template:
+    metadata:
+      labels:
+        app: llm-gateway
+    spec:
+      serviceAccountName: llm-gateway-sa
+      containers:
+      - name: llm-gateway
+        image: {{ .Values.global.collectorImage }}
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            pip install -r /app/requirements.txt
+            python -m src.gateway.llm_gateway
+        ports:
+        - containerPort: {{ .Values.gateway.llm.port }}
+        env:
+        - name: SPIFFE_ENDPOINT_SOCKET
+          value: "unix:///opt/spire/sockets/agent.sock"
+        - name: LLM_BACKEND
+          value: "{{ .Values.gateway.llm.backend }}"
+        - name: GEMINI_MODEL
+          value: "{{ .Values.gateway.llm.model }}"
+        - name: GEMINI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: "llm-secrets"
+              key: "api-key"
+        volumeMounts:
+        - name: spire-agent-socket
+          mountPath: /opt/spire/sockets
+          readOnly: true
+      volumes:
+      - name: spire-agent-socket
+        hostPath:
+          path: /opt/spire/sockets
+          type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: llm-gateway-svc
+  namespace: {{ .Values.global.namespace }}
+spec:
+  selector:
+    app: llm-gateway
+  ports:
+  - port: {{ .Values.gateway.llm.port }}
+    targetPort: {{ .Values.gateway.llm.port }}

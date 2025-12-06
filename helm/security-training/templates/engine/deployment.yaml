@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: risk-scorer-sa
+  namespace: {{ .Values.global.namespace }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: risk-scorer
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: risk-scorer
+spec:
+  replicas: {{ .Values.engine.riskScorer.replicas }}
+  selector:
+    matchLabels:
+      app: risk-scorer
+  template:
+    metadata:
+      labels:
+        app: risk-scorer
+    spec:
+      serviceAccountName: risk-scorer-sa
+      containers:
+      - name: risk-scorer
+        image: {{ .Values.global.collectorImage }}
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            pip install -r /app/requirements.txt
+            python -m src.engine.risk_scorer
+        ports:
+        - containerPort: {{ .Values.engine.riskScorer.port }}
+        env:
+        - name: SPIFFE_ENDPOINT_SOCKET
+          value: "unix:///opt/spire/sockets/agent.sock"
+        - name: DB_HOST
+          value: "{{ .Values.database.host }}"
+        - name: DB_NAME
+          value: "{{ .Values.database.name }}"
+        - name: DB_USER
+          value: "{{ .Values.database.user }}"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Values.database.passwordSecret }}"
+              key: "{{ .Values.database.passwordKey }}"
+        volumeMounts:
+        - name: spire-agent-socket
+          mountPath: /opt/spire/sockets
+          readOnly: true
+      volumes:
+      - name: spire-agent-socket
+        hostPath:
+          path: /opt/spire/sockets
+          type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: risk-scorer-svc
+  namespace: {{ .Values.global.namespace }}
+spec:
+  selector:
+    app: risk-scorer
+  ports:
+  - port: {{ .Values.engine.riskScorer.port }}
+    targetPort: {{ .Values.engine.riskScorer.port }}
