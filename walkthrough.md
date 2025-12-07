@@ -1,115 +1,120 @@
-# Verification & Walkthrough
+# Deployment Walkthrough
 
-## 1. System Workflow
-Based on the architecture defined in `LMS_PROJECT_CONTEXT.md`, here is the system data flow:
+This document provides step-by-step instructions for deploying the AI-Driven Personalized Security Training Platform.
 
-```mermaid
-graph TD
-    subgraph "Data Sources & Collection (Simulation)"
-        Collectors["Simulated Metadata Servers<br/>(Git/Jira/IAM/SIEM)"] -- 1. mTLS Write --> DB[(Metadata Database)]
-    end
+## Prerequisites
 
-    subgraph "Logic & Intelligence"
-        DB -- Read Activity --> RISK[Risk Scoring Engine]
-        RISK -- Risk Profile/Context --> LLM[LLM Gateway]
-        LLM -- Prompt --> GEMINI[Google Gemini]
-    end
+- Docker Desktop with Kubernetes enabled
+- Helm 3.x installed
+- Gemini API key (from [AI Studio](https://aistudio.google.com/apikey))
 
-    subgraph "User Presentation"
-        LLM -- Personalized Content --> LMS[Streamlit LMS]
-    end
+## Step 1: Build Docker Image
 
-    subgraph "Identity Plane"
-        SPIRE_SERVER[SPIRE Server] -- Attests --> SPIRE_AGENT[SPIRE Agent]
-        SPIRE_AGENT -. SVID .-> Collectors
-        SPIRE_AGENT -. SVID .-> RISK
-        SPIRE_AGENT -. SVID .-> LLM
-        SPIRE_AGENT -. SVID .-> LMS
-    end
+```bash
+cd personalized-cyber
+docker build -t security-training-app:latest .
 ```
 
-### The Architecture Chain
-1.  **Employee Identity (Workday)**: The `workday_id` is the **Primary Key**. All data links to this ID, ensuring Joe's data feeds Joe's training.
-2.  **Data Layer (Simulated Metadata Servers)**: Collectors generate deterministic "risky" metadata to demonstrate the Risk Engine.
-3.  **Risk Engine**: Calculates a **0.0-1.0 Risk Score** which determines **Training Frequency** (Quarterly → Monthly → Sprint).
-4.  **LLM Gateway**: Generates personalized training content via **Google Gemini** based on the specific risk context.
-5.  **LMS**: Continuously updated. Schedules and delivers training at the correct frequency for each employee.
+## Step 2: Set Environment Variables
 
-*(Note: In the current MVP implementation, the LMS acts as the orchestrator that retrieves Risk Data and passes it to the LLM Gateway to fulfill this logical chain.)*
-
-## 2. Unit Tests
-We implemented unit tests for the core `SPIFFEMTLSHandler` to ensure it operates correctly even when the SPIRE agent is not present (graceful fallback).
-
-### Test Results
-Run the tests with:
 ```bash
-./scripts/setup-dev.sh
-source .venv/bin/activate
-pytest tests/
+export GEMINI_API_KEY="your-gemini-api-key"
 ```
 
-Expected output:
-- `test_refresh_certificates_failure`: **PASSED** (Verifies graceful fallback)
-- `test_refresh_certificates_success`: **PASSED** (Verifies correct parsing of SPIRE data)
+## Step 3: Deploy with Helm
 
-## 2. Infrastructure Deployment
-
-### Step 0: Build the Images (Local Dev)
-Since you are running on Docker Desktop, we build the images locally so Kubernetes can see them.
 ```bash
-./scripts/build.sh
-```
-
-### Step 1: Deploy with Helm
-```bash
-# Create namespace first
-kubectl create namespace security-training
-
-# Deploy (includes PostgreSQL, SPIRE, all services)
 helm install security-system ./helm/security-training \
-  --namespace security-training \
-  --set secrets.geminiApiKey="YOUR_GEMINI_API_KEY"
+  --set global.geminiApiKey=$GEMINI_API_KEY
 ```
 
-Wait ~3 minutes for all pods to be ready:
+## Step 4: Wait for Pods
+
 ```bash
 kubectl get pods -n security-training -w
 ```
 
-### Step 2: Run the IEEE Simulation
-Once deployments are ready (wait ~2 mins), run the bulk simulation to generate data for 50 employees:
+Expected output (all pods Running):
+```
+NAME                              READY   STATUS    RESTARTS   AGE
+git-collector-xxx                 1/1     Running   0          2m
+iam-collector-xxx                 1/1     Running   0          2m
+jira-collector-xxx                1/1     Running   0          2m
+llm-gateway-xxx                   1/1     Running   0          2m
+lms-xxx                           1/1     Running   0          2m
+postgres-xxx                      1/1     Running   0          2m
+risk-scorer-xxx                   1/1     Running   0          2m
+siem-collector-xxx                1/1     Running   0          2m
+spire-agent-xxx                   1/1     Running   0          2m
+spire-server-0                    1/1     Running   0          2m
+```
+
+## Step 5: Verify SPIRE Registration
 
 ```bash
-./scripts/run-simulation.sh
+kubectl exec -n security-training deploy/spire-server -- \
+  /opt/spire/bin/spire-server entry show
 ```
-*This will seed 50 synthetic users (diverse job profiles) and generate risky events (Git, Jira, IAM) for them.*
 
-### Step 3: Access the Dashboard
-Port forward the LMS service:
+Should show entries for: lms, llm-gateway, risk-scorer, git-collector, etc.
+
+## Step 6: Access LMS Dashboard
+
 ```bash
-kubectl port-forward svc/lms 8080:8080
+kubectl port-forward svc/lms 8080:8080 -n security-training
 ```
-Open [http://localhost:8080](http://localhost:8080) to view the personalized training plan.
-For local testing without Kubernetes, you can run the services individually:
 
-1. **Start Database:**
-   ```bash
-   docker-compose up -d
-   ```
+Open browser: http://localhost:8080
 
-2. **Run Services:**
-   ```bash
-   # Terminal 1: Git Collector
-   python -m src.collectors.git_collector
-   
-   # Terminal 2: Risk Scorer
-   python -m src.engine.risk_scorer
-   
-   # Terminal 3: LMS Dashboard
-   streamlit run src/lms/app.py
-   ```
+## Step 7: Test Personalized Training
 
-## 4. Architecture Verification
-- **Code Duplication Removed**: All collectors inherit from `src.base.spiffe_agent.BaseSPIFFEAgent`.
-- **SPIFFE Integration**: All services use `SPIFFEMTLSHandler` for authentication.
-- **Database Schema**: Unified schema in `database/schema.sql` covers all metrics defined in the context.
+1. Select a user from the dropdown in the sidebar
+2. Navigate to "My Training" page
+3. Click "Start Module" on any recommended module
+4. Wait for Gemini to generate personalized content via mTLS → LLM Gateway
+
+Success message should show:
+```
+✅ Generated via mTLS → LLM Gateway → gemini (gemini-2.5-flash)
+```
+
+---
+
+## Troubleshooting
+
+### SPIRE Agent Not Starting
+```bash
+kubectl logs -n security-training daemonset/spire-agent
+```
+
+Common fix: Wait for SPIRE server to be fully ready before agent starts.
+
+### mTLS Certificate Errors
+```bash
+kubectl logs -n security-training -l app=lms | grep -i spiffe
+```
+
+Ensure workload is registered:
+```bash
+kubectl exec -n security-training deploy/spire-server -- \
+  /opt/spire/bin/spire-server entry show | grep lms
+```
+
+### Gemini Rate Limits
+If you see 429 errors, wait 60 seconds or check your API quota at:
+https://ai.dev/usage?tab=rate-limit
+
+### Rebuild After Code Changes
+```bash
+docker build -t security-training-app:latest .
+kubectl delete pod -n security-training -l app=lms
+kubectl delete pod -n security-training -l app=llm-gateway
+```
+
+---
+
+## Architecture Reference
+
+See [DEPLOYMENT_ARCHITECTURE.md](./DEPLOYMENT_ARCHITECTURE.md) for complete architecture diagram.
+
+See [LESSONS_LEARNED.md](./LESSONS_LEARNED.md) for detailed troubleshooting scenarios.

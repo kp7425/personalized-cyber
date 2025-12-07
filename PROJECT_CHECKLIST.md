@@ -28,7 +28,7 @@ We propose a **Context-Aware Personalization Engine** that:
     | 0.4 - 0.6 (Medium) | Monthly |
     | 0.7 - 1.0 (Critical) | Every Sprint / Urgent |
 
-4.  **LMS Dynamically Updated**: The LMS system (tied to `workday_id`) is continuously updated with new risk data. It generates personalized training content via LLM based on the specific risk context AND schedules it according to the frequency tier.
+4.  **LMS Dynamically Updated**: The LMS system (tied to `workday_id`) generates personalized training content via LLM based on the specific risk context AND schedules it according to the frequency tier.
 
 5.  **Zero-Trust Data Provenance (SPIFFE)**: Uses Workload Identity (SVIDs) to guarantee the data feeding the AI is authentic—not spoofed or poisoned.
 
@@ -46,6 +46,7 @@ We propose a **Context-Aware Personalization Engine** that:
 ### Phase 1: Infrastructure ✅
 - [x] Docker/Kubernetes Setup
 - [x] SPIRE Server & Agent Configuration
+- [x] Automated SPIRE Workload Registration
 - [x] PostgreSQL Database Schema (Users, Risks, Events)
 - [x] Dockerfile & Build Script
 
@@ -53,6 +54,7 @@ We propose a **Context-Aware Personalization Engine** that:
 - [x] `SPIFFEMTLSHandler` (Certificate Management)
 - [x] `BaseSPIFFEAgent` (Service Base Class)
 - [x] `Database` Utility (Connection Pooling, Repositories)
+- [x] Init Containers for SPIRE Dependency Ordering
 
 ### Phase 3: Data Collectors (Simulated) ✅
 - [x] Git Collector (Secrets, Force Push, Vulnerabilities)
@@ -63,10 +65,13 @@ We propose a **Context-Aware Personalization Engine** that:
 ### Phase 4: Intelligence Layer ✅
 - [x] Risk Scoring Engine (0-1 Normalization)
 - [x] Training Recommender
-- [x] LLM Gateway (Gemini Integration)
+- [x] LLM Gateway (Gemini 2.5-flash Integration via mTLS)
 
 ### Phase 5: Presentation Layer ✅
 - [x] Streamlit LMS Dashboard
+- [x] User Selector (Switch between users)
+- [x] Dynamic Training Modules (Personalized per risk profile)
+- [x] mTLS Integration for LLM Calls
 
 ### Phase 6: Central Metadata Database & Simulation ✅
 - [x] Create User Seeder (50 users, 8 job profiles)
@@ -77,6 +82,8 @@ We propose a **Context-Aware Personalization Engine** that:
 
 ### Phase 7: Kubernetes Deployment ✅
 - [x] Helm Chart: SPIRE Server/Agent
+- [x] Helm Chart: SPIRE Registration Job (Auto-discovery)
+- [x] Helm Chart: Wait-for-SPIRE RBAC
 - [x] Helm Chart: Collectors (Shared Template)
 - [x] Helm Chart: Risk Engine
 - [x] Helm Chart: LLM Gateway
@@ -84,15 +91,39 @@ We propose a **Context-Aware Personalization Engine** that:
 - [x] Helm Chart: PostgreSQL Database (PVC + Service)
 - [x] Helm Chart: Secrets (DB password, Gemini API)
 
-### Phase 8: Verification ⏳
+### Phase 8: Verification ✅
 - [x] Unit Tests (SPIFFEMTLSHandler)
-- [ ] End-to-End Simulation Run
-- [ ] Dashboard Screenshots for Paper
+- [x] End-to-End mTLS Verification
+- [x] LMS → LLM Gateway → Gemini Integration Working
+- [x] User Selection and Personalized Training Verified
+- [ ] Dashboard Screenshots for Paper (Final)
 
 ---
 
-## Next Steps
-1.  Create missing Helm templates (Engine, Gateway, LMS)
-2.  Run `./scripts/build.sh && helm install`
-3.  Execute `./scripts/run-simulation.sh`
-4.  Capture Dashboard Screenshots for IEEE Paper
+## Documentation ✅
+
+| Document | Status | Purpose |
+|----------|--------|---------|
+| README.md | ✅ Updated | Project overview and quick start |
+| DEPLOYMENT_ARCHITECTURE.md | ✅ Updated | Complete K8s architecture |
+| LESSONS_LEARNED.md | ✅ Created | Challenges & solutions |
+| SYNTHETIC_DATA_SPEC.md | ✅ Complete | Data generation specs |
+| walkthrough.md | ✅ Updated | Step-by-step deployment |
+
+---
+
+## Key Achievements
+
+1. **Full mTLS Implementation**: All internal services communicate via SPIFFE X.509-SVIDs
+2. **Automated SPIRE Registration**: Dynamic agent ID discovery and workload registration
+3. **LLM Gateway**: Centralized AI access with API key isolation
+4. **Personalized Training**: Risk-based module recommendations using Gemini 2.5-flash
+5. **User Selection**: Dashboard allows switching between users for demo purposes
+
+---
+
+## Next Steps (For Paper)
+1. Capture final Dashboard Screenshots
+2. Run complete simulation for 30-day data generation
+3. Document performance metrics
+4. Submit IEEE paper
