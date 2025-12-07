@@ -22,6 +22,17 @@ spec:
         app: risk-scorer
     spec:
       serviceAccountName: risk-scorer-sa
+      initContainers:
+      # Wait for SPIRE registration to complete
+      - name: wait-for-spire-registration
+        image: bitnami/kubectl:latest
+        command:
+        - /bin/bash
+        - -c
+        - |
+          echo "⏳ Waiting for SPIRE registration job to complete..."
+          kubectl wait --for=condition=Complete job/spire-register-workloads -n {{ .Values.global.namespace }} --timeout=180s 2>/dev/null || true
+          echo "✅ SPIRE registration complete, starting service"
       containers:
       - name: risk-scorer
         image: {{ .Values.global.collectorImage }}

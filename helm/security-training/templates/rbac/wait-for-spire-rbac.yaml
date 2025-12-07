@@ -1,0 +1,26 @@
+# RBAC for workloads to wait for SPIRE registration job
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: wait-for-spire-role
+  namespace: {{ .Values.global.namespace }}
+rules:
+# Allow init containers to wait for the registration job
+- apiGroups: ["batch"]
+  resources: ["jobs"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: wait-for-spire-binding
+  namespace: {{ .Values.global.namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: wait-for-spire-role
+subjects:
+# Allow all service accounts in namespace
+- kind: Group
+  name: system:serviceaccounts:{{ .Values.global.namespace }}
+  apiGroup: rbac.authorization.k8s.io

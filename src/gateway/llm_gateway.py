@@ -11,7 +11,9 @@ from src.base.spiffe_agent import BaseSPIFFEAgent
 
 LLM_BACKEND = os.getenv('LLM_BACKEND', 'gemini').lower()
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
-GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-1.5-flash')
+GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-2.5-flash')  # Updated to 2.5
+
+TRUST_DOMAIN = os.getenv('TRUST_DOMAIN', 'security-training.example.org')
 
 class LLMGateway(BaseSPIFFEAgent):
     
@@ -20,7 +22,10 @@ class LLMGateway(BaseSPIFFEAgent):
             service_name="llm-gateway",
             port=8520,
             allowed_callers=[
-                f"spiffe://{os.getenv('TRUST_DOMAIN', 'security-training.example.org')}/lms-api"
+                # Allow LMS and other services to call the gateway
+                f"spiffe://{TRUST_DOMAIN}/lms",
+                f"spiffe://{TRUST_DOMAIN}/lms-api",
+                f"spiffe://{TRUST_DOMAIN}/risk-scorer",
             ]
         )
     
@@ -39,60 +44,51 @@ class LLMGateway(BaseSPIFFEAgent):
             return {"error": f"Unknown backend: {LLM_BACKEND}"}
     
     def _call_gemini(self, messages: list, config: dict) -> dict:
-        """Call Google Gemini API."""
+        """Call Google Gemini API using google-generativeai library."""
         if not GEMINI_API_KEY:
             return {"error": "GEMINI_API_KEY not set"}
         
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
-        
-        # Convert OpenAI-style messages to Gemini format
-        contents = []
-        system_instruction = None
-        
-        for msg in messages:
-            role = msg['role']
-            content = msg['content']
-            
-            if role == 'system':
-                system_instruction = content
-            elif role == 'user':
-                contents.append({"role": "user", "parts": [{"text": content}]})
-            elif role == 'assistant':
-                contents.append({"role": "model", "parts": [{"text": content}]})
-        
-        payload = {
-            "contents": contents,
-            "generationConfig": {
-                "temperature": config.get('temperature', 0.3),
-                "maxOutputTokens": config.get('max_tokens', 500)
-            }
-        }
-        
-        if system_instruction:
-            payload["systemInstruction"] = {"parts": [{"text": system_instruction}]}
-        
         try:
-            response = requests.post(
-                f"{url}?key={GEMINI_API_KEY}",
-                json=payload,
-                headers={"Content-Type": "application/json"},
-                timeout=60
-            )
+            import google.generativeai as genai
             
-            if response.status_code != 200:
-                return {"error": f"Gemini error: {response.status_code} - {response.text}"}
+            genai.configure(api_key=GEMINI_API_KEY)
+            model = genai.GenerativeModel(GEMINI_MODEL)
             
-            result = response.json()
-            # Handle safety blockings or other structures
-            if 'candidates' in result and result['candidates']:
+            # Build prompt from messages
+            prompt_parts = []
+            for msg in messages:
+                role = msg['role']
+                content = msg['content']
+                if role == 'system':
+                    prompt_parts.insert(0, f"Instructions: {content}\n\n")
+                else:
+                    prompt_parts.append(content)
+            
+            prompt = "\n".join(prompt_parts)
+            
+            # Generate content
+            response = model.generate_content(prompt)
+            
+            # Extract text from response
+            if response and hasattr(response, 'text') and response.text:
                 return {
-                    "content": result['candidates'][0]['content']['parts'][0]['text'],
+                    "content": response.text,
                     "model": GEMINI_MODEL,
                     "backend": "gemini"
                 }
+            elif response.candidates:
+                # Try to extract from candidates
+                candidate = response.candidates[0]
+                if candidate.content and candidate.content.parts:
+                    return {
+                        "content": candidate.content.parts[0].text,
+                        "model": GEMINI_MODEL,
+                        "backend": "gemini"
+                    }
+                return {"error": f"No content in candidate: finish_reason={candidate.finish_reason}"}
             else:
-                 return {"error": f"No candidates returned: {result}"}
-                 
+                return {"error": "No response from Gemini"}
+                
         except Exception as e:
             return {"error": str(e)}
 
