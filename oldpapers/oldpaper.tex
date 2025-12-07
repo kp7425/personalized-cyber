@@ -1,0 +1,345 @@
+\documentclass[conference]{IEEEtran}
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,positioning}
+
+\begin{document}
+
+\title{Enterprise-level Personalized Cybersecurity Training using SLM-LLM Hybrid Framework}
+
+\author{\IEEEauthorblockN{Karthik Pappu}
+\IEEEauthorblockA{DSU Student\\
+Email: karthik.pappu@trojans.dsu.edu}}
+
+\maketitle
+
+\begin{abstract}
+This paper proposes an SLM-LLM hybrid framework for personalized cybersecurity training. Traditional cybersecurity training programs offer generic content and fail to address different job roles and daily task-specific needs. AI-based training has improved by generating a profile for an employee and tailoring content based on job roles and input. However, current systems lack task-specific customization, which changes constantly according to the employee's project. The proposed SLM-LLM hybrid framework utilizes small language models (SLMs) installed on employee's devices to understand their job tasks, roles, and work patterns creating a personalized training profile. This profile updates the large language model (LLM) using Federated learning. The LLM generates a unique training course for each employee, and the Learning Management System (LMS) delivers the course. After training, the SLM evaluates the employee's cybersecurity practices and updates the profile for future training. This approach addresses the limitations of generic and AI training by providing continuous, role-specific, and adaptive cybersecurity training.
+\end{abstract}
+
+\section{Introduction}
+Data is the new gold \cite{ref1}, and with increased technological progress, protecting organizational data against cyber threats \cite{ref2} is challenging. Enforcing data security requires synthesizing technical safeguards and cybersecurity awareness training, both of which are the pillars of a defense-in-depth strategy.
+
+Previously, organizations stored data in on-premises or co-location data centers, where network firewalls, data loss prevention devices (DLP), and access controls provided data security \cite{ref3}. However, the potential for data compromise remained due to internal threats, misconfigurations, and generic cybersecurity awareness training.
+
+The threat landscape has evolved with the shift towards hybrid cloud environments, adding complexities such as identity and access management (IAM) in the cloud and remote access \cite{ref4}. For example, database engineers are primarily responsible for designing efficient database engine processes for sorting and accessing information \cite{ref5}, while database administrators manage database access \cite{ref5}. As cloud providers began offering hosted databases, the scope of database engineers expanded from database design to include access management. The change in the job responsibilities can lead to misconfigurations and data exposure. Thus, personalized cybersecurity training tailored to specific tasks and roles becomes essential for organizations.
+
+To address the limitations of traditional cybersecurity training, we propose an SLM-LLM hybrid framework for personalized cybersecurity training. This framework leverages small language models (SLMs) and large language models (LLMs) to deliver a customized learning experience. The hybrid system utilizes an SLM installed on employees' laptops or desktops to analyze their job tasks, roles, and work patterns and create a personalized training model. This training model updates the LLM using Federated learning. The LLM generates a unique training course for each employee, and the Learning Management System (LMS) delivers the course. After training completion, the SLM evaluates the employees' cybersecurity practices and updates their profiles for future training.
+
+\section{Literature Review}
+\subsection{Traditional Cybersecurity Training Models}
+Cybersecurity awareness training focuses on generic training for employees. The programs focus on phishing, malware, and social engineering \cite{ref6} and offer guidance on recognizing and responding to these threats. However, the one-size-fits-all \cite{ref7} approach may not be suitable for varied responsibilities and risk profiles of different job roles within an organization.
+
+\subsection{AI-Driven Customization in Cybersecurity Training}
+In AI-Driven Customized Cyber Security Training and Awareness \cite{ref6}, AI customizes cybersecurity training by generating a learner-specific profile based on human input \cite{ref6}. These inputs include technical proficiency, operating system knowledge, familiarity with cybersecurity tools, practical experience, understanding of legal and regulatory frameworks, offensive and defensive security techniques, and digital forensics expertise \cite{ref6}. This learning profile depends on how a human interprets knowledge in that area, and the profile varies between individuals.
+
+\subsection{Effectiveness of AI-Based Training Programs}
+The paper discusses the effectiveness of AI-based training programs by integrating traditional Cybersecurity Awareness and Training (CSAT) programs with Generative Pre-Trained Transformers (GPT) \cite{ref8}. Traditional training lacks personalization and adaptability to individual learning styles. The study integrates GPT models to deliver highly tailored and dynamic cybersecurity learning experiences by leveraging natural language processing capabilities \cite{ref8}. The authors propose personalized training modules based on individual trainee profiles generated linearly by presenting real-world scenarios within the user's knowledge domain.
+
+\subsection{Research Gaps}
+Traditional cybersecurity training programs are a one-size-fits-all approach \cite{ref6}\cite{ref7}, offering generic content and failing to address job roles and daily task-specific needs. AI-based training \cite{ref6}\cite{ref8} has improved by generating a profile for an employee and tailoring content based on job roles and input. The training is dynamically generated based on human input but cannot continuously monitor the employee's security practices to create personalized training based on the real-time tasks employees perform. Currently, the training systems lack task-specific customization, which changes constantly according to the engineer's project. To address the gap, we propose a hybrid Small Language Model and Large Language Model (SLM-LLM) framework, which constantly monitors employee's work activity and generates personalized cybersecurity training.
+
+\section{Methodology Critique and Analysis}
+The papers we will review, Paper1 \cite{ref8}, Paper2 \cite{ref6}, and Paper3 \cite{ref9}, provide insight into the current state of AI-based cybersecurity training. Reviewing these papers can identify research gaps and apply these findings to develop an SLM-LLM-based personalized cybersecurity training detection and prevention framework.
+
+\subsection{Paper 1: GPT-enabled cybersecurity training: A tailored approach for effective awareness}
+\subsubsection{Methodology Overview}
+\begin{itemize}
+    \item The authors proposed a GPT-CSAT program with interactive human-like conversations and dynamic, real-time content tailoring.
+    \item The researchers have devised an experiment to investigate the GPT-CSAT approach's effectiveness in providing tailored email security training for organizational requirements and individual needs.
+    \item The paper aims to validate the impact of risk scores on program difficulty and structure, confirm program personalization alignment with the trainee's job description, and ensure alignment of program content with trainee job descriptions.
+    \item Nine fictional personas were developed to simulate roles and levels of work experience, allowing systematic examination of each variable in isolation.
+\end{itemize}
+
+\subsubsection{Strengths of the Approach}
+\begin{itemize}
+    \item The study integrates GPT models to deliver tailored and dynamic cybersecurity learning, addressing the limitations of traditional CSAT programs that lack personalization and adaptability.
+    \item The GPT-powered CSAT programs offer scalable and role-specific cybersecurity awareness training.
+    \item The program employs a linear approach and provides training in real-world scenarios within the user's knowledge domain.
+\end{itemize}
+
+\subsubsection{Weaknesses and Limitations}
+\begin{itemize}
+    \item The study highlights the limitations of using deterministic metrics for evaluating the training program and suggests adopting a more empirical approach, including exploring text complexity measures beyond readability.
+    \item The GPT-CSAT model is limited in personalization and lacks full integration of user behavior data.
+\end{itemize}
+
+\subsection{Paper 2: AI-driven customized cyber security training and awareness}
+\subsubsection{Methodology Overview}
+\begin{itemize}
+    \item The authors propose AI-driven customized cybersecurity training and awareness materials using GPT-4.
+    \item The methodology proposed requires defining input and output dataset fields to create educational material in a standard form. The input includes specifying non-critical, non-confidential data fields to build a learner's profile.
+    \item The learner profile is constructed using the following parameters:
+    \begin{itemize}
+        \item Technical Proficiency
+        \item Operating system knowledge
+        \item Knowledge of cybersecurity tools
+        \item Practical Experience
+        \item Understanding of Legal and Regulatory Frameworks
+        \item Offensive and defensive security techniques
+        \item Digital forensics expertise
+    \end{itemize}
+    \item The authors developed an application to structure these inputs into prompts and interface with the OpenAI API, generating tailored training content.
+\end{itemize}
+
+\subsubsection{Strengths of the Approach}
+\begin{itemize}
+    \item This approach allows the generation of tailored training content to meet specific needs.
+    \item It can generate comprehensive training material, saving time and resources.
+    \item It can generate various training materials, from multiple-choice questions to practical labs.
+\end{itemize}
+
+\subsubsection{Weaknesses and Limitations}
+\begin{itemize}
+    \item The Learner's profile is generated based on human input and job profiles rather than an individual's day-to-day tasks.
+    \item Requires humans to review generated content to ensure accuracy.
+\end{itemize}
+
+\subsection{Paper 3: An Exploratory Study on Sustaining Cyber Security Protection through SETA Implementation}
+\subsubsection{Methodology Overview}
+\begin{itemize}
+    \item The authors employ supervised machine learning to explore factors contributing to companies implementing Security Education, Training, and Awareness (SETA) programs.
+    \item The study utilizes a dataset from a 2016 UK cyber security survey of 1008 businesses and 30 interviews.
+    \item Feature generation for the study is based on the following parameters:
+    \begin{itemize}
+        \item Frequency of antivirus software updates
+        \item Size of the company
+        \item Frequency of cyber attacks
+        \item Total number of cyber-attacks in a year
+        \item Importance of Cybersecurity in Top Leadership
+        \item Whether the company has cyber insurance
+        \item Are the cybersecurity breaches staff-related?
+        \item Do the companies use cloud or externally hosted web services?
+    \end{itemize}
+    \item The study used a stratified K-fold cross-validation method to reduce model training bias caused by the possible data splitting contingency.
+    \item The authors evaluated eight supervised learning models to classify the feature set and select the one that performs better at detecting companies with SETA implementation.
+    \item The random forest model achieved stable performance compared to other models in detecting the companies and organizations that have held SETA training.
+\end{itemize}
+
+\subsubsection{Strengths of the Approach}
+\begin{itemize}
+    \item Previous studies used qualitative SETA research work, but the authors of this paper chose to use quantitative analysis using machine learning.
+    \item The authors conducted extensive surveys to collect data rather than using synthetic data generation.
+    \item The paper has compared multiple machine learning models to identify the suitable one for SETA training.
+\end{itemize}
+
+\subsubsection{Weaknesses and Limitations}
+\begin{itemize}
+    \item The authors used binary classification to decide whether the organization would implement SETA.
+    \item The dataset is restricted to UK businesses, which limits us from the generalization for cybersecurity training.
+    \item The survey was taken in 2016 and needed to consider current trends.
+\end{itemize}
+
+\section{Research Problem and Hypothesis}
+\subsection{Research Problem}
+Current cybersecurity training programs in enterprise environments cannot provide personalized and adaptive learning experiences that align with employees' expanding job roles and daily tasks. This research aims to address the gap by developing and implementing a hybrid SLM-LLM architecture that improves the effectiveness of cybersecurity training by continuously adapting to employees' changing job responsibilities and work patterns.
+
+\subsection{Research Questions}
+To address the research problem, we have developed the following questions:
+\begin{itemize}
+    \item How can a hybrid Small Language Model-Large Language model architecture improve personalized cybersecurity training compared to traditional and AI-based training?
+    \item How can SLMs process real-time data from employee devices to recognize immediate cybersecurity training requirements?
+    \item Can the cloud LLM process data sent from multiple SLMs to predict future cybersecurity risks and develop adaptive training content?
+    \item What are the challenges and limitations of implementing a hybrid SLM-LLM architecture for enterprise environments?
+    \item What is the effectiveness of personalized training by the SLM-LLM system compared to others?
+\end{itemize}
+
+\subsection{Statement of Hypothesis}
+Employees who receive personalized cybersecurity training using the SLM-LLM framework demonstrate higher security awareness and better security practices and contribute to fewer security incidents than those who receive generic and contemporary AI-based training.
+
+\subsection{Justification of Hypothesis}
+The hypothesis statement assumes that the framework can understand employee behavior by identifying job-specific training needs compared to traditional and AI-based training systems. By deploying SLMs on employee devices, the system monitors and analyzes real-time data such as software usage, code commits, file interactions, network activities, and system logs. The generated data from multiple SLMs updates the global central LLM, which performs a deeper analysis to develop personalized training content for each employee. This hybrid architecture improves on the traditional and AI-based cybersecurity training by aggregating data from multiple SLMs, improving the organization's cybersecurity posture and reducing security incidents.
+
+\section{Proposed Solution and System Architecture}
+This section discusses the SLM-LLM hybrid framework, which utilizes federated learning, as described in \cite{ref10}, and cloud LLMs \cite{ref11}. These papers research the application of federated learning in knowledge transfer and edge-cloud collaborative inference, highlighting its potential to enhance system efficiency and data privacy. The proposed SLM-LLM hybrid framework uses federated learning to ensure employee data privacy while delivering personalized cybersecurity training, as shown in Figure 1. The system incorporates request batching for efficient data handling and leverages gRPC for secure and high-performance communication between SLMs and the LLM. 
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{SLM-LLM_Architecture.png}
+\caption{SLM-LLM Architecture}
+\label{fig:architecture}
+\end{figure}
+
+\subsection{Employee Device and Local Model Training}
+The employee device and local model training process begins with SLMs monitoring various employee device activities, including file handling, coding practices, software usage, and login patterns. A Data Transformer component processes this raw data, collecting and converting it into a structured format. The structured data gets aggregated through request batching. The local SLM on the employee's device gets trained using this structured and batched data to create an employee profile model that captures behavioral patterns. The model training utilizes federated learning, which keeps raw data secure on the employee's device while sending model updates to the Global model without exposing sensitive information. The system utilizes the gRPC protocol [12] to send periodic training model updates to the central LLM, maintaining continuous synchronization between local and global models.
+\subsection{Cloud LLM and Personalized Training Delivery}
+The central LLM in the cloud infrastructure aggregates data from SLMs on employee devices received using federated updates via gRPC. These update the global model, maintaining a comprehensive view of the organization's cybersecurity training needs. The global model then generates personalized training content for each employee and updates the Learning Management System (LMS). The training content is delivered via LMS, and a notification is sent to employees' devices.
+
+
+\subsection{Training Notification and Feedback Loop}
+Employees receive personalized training based on their job roles and work patterns. After completing the training, the SLM actively monitors the employee's post-training work pattern to assess the effectiveness of the training. The collected work data updates the employee's profile model. The SLM then sends these updated models via federated updates to the cloud LLM. This feedback loop guarantees that the training system constantly adapts and improves based on employee tasks, roles, and learning outcomes.
+
+\subsection{Model Formulation and Analysis}
+The paper's scope is to present a framework, and testing the framework is outside the scope of this paper. In this section, we propose the model formulation for our future work. Building upon the federated learning concepts presented in \cite{ref10}, we present a mathematical formulation that illustrates the core concepts of our proposed personalized cybersecurity training system. Let $f$ represent the cloud LLM and $g(k)$ represent the SLM on employee device $k$.
+
+
+\subsubsection{Local Work Pattern Collection}
+For each employee device $k$, we collect work pattern data $D(k)$:
+
+$D(k) = \{S(k,t), C(k,t), A(k,t)\}$
+
+\begin{description}
+   \item[$S(k,t)$] Software usage patterns on device $k$ at time $t$
+   \item[$C(k,t)$] Code repository activities on device $k$ at time $t$
+   \item[$A(k,t)$] System access patterns on device $k$ at time $t$
+\end{description}
+
+\subsubsection{Local Model Updates}
+The SLM computes model updates:
+
+$delta\_g(k) = g(k)_{new} - g(k)_{old}$
+
+\begin{description}
+   \item[$g(k)_{new}\;$] \quad The optimized local model
+   \item[$g(k)_{old}$] \quad The previous model state
+\end{description}
+\vspace{0.2cm}
+\subsubsection{Global Model Aggregation}
+The LLM aggregates updates using federated averaging:
+
+$f_{new} = f_{old} + n * (1/K) * \sum(delta\_g(k))$
+
+where:
+\begin{itemize}
+    \item $n$ is the learning rate
+    \item $K$ is the total number of devices
+    \item $\sum(delta\_g(k))$ represents the sum of all local updates
+\end{itemize}
+\vspace{0.2cm}
+\subsubsection{Training Generation}
+Personalized training content $T(k)$ is generated as:
+
+$T(k) = f_{new}(p(k))$
+
+where $p(k)$ represents employee $k$'s profile information.
+
+This mathematical representation provides the theoretical groundwork for our framework. Future research will address its implementation and validation using SLMs, LLMs, and synthetic data through federated learning.
+
+\subsection{Justification for Proposed Solution}
+Our proposed hybrid SLM-LLM framework for personalized cybersecurity training addresses several limitations of traditional and AI-tailored training, as shown in Table \ref{tab:comparison}.
+
+\begin{table}[htbp]
+\caption{Comparison of Current Systems vs Proposed Solution}
+\label{tab:comparison}
+\begin{tabular}{|p{1.1cm}|p{1.5cm}|p{2cm}|p{2cm}|}
+\hline
+\textbf{Type} & \textbf{Current Systems} & \textbf{Proposed Solution} & \textbf{Benefit} \\
+\hline
+Approach & Generic \& AI-tailored & SLM-LLM hybrid & Contextual learning based on daily tasks \\
+\hline
+Data Collection & Human input based & Continuous monitoring & More accurate employee behavior analysis \\
+\hline
+AI Implementation & Single model systems & Distributed architecture & Enhanced personalization with privacy \\
+\hline
+Learning & Role-based training & Role \& Task-based & Better knowledge retention and application \\
+\hline
+Analytics & Post-training assessment & Real-time evaluation & Immediate identification of gaps \\
+\hline
+Privacy & Centralized processing & Federated learning & Protected sensitive employee data \\
+\hline
+Delivery & Scheduled modules & Dynamic content & Just-in-time training delivery \\
+\hline
+Adaptation & Manual updates & Automated updates & Reduced maintenance overhead \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Data Collection Methodology and Analysis}
+\subsection{Data Sources and Parameters}
+We have identified key data parameters required to provide personalized cybersecurity training to employees in enterprise environments. The data is gathered from company-issued laptops, desktops, and mobile devices. As shown in \ref{tab:sources}, the selected data parameters are based on their ability to understand the employee's work pattern and provide inputs to train the local language model
+
+\begin{table}[htbp]
+\caption{Data Sources and Parameters}
+\label{tab:sources}
+\begin{tabular}{|p{2cm}|p{2.5cm}|p{2.5cm}|}
+\hline
+\textbf{Data Source} & \textbf{Parameter} & \textbf{Justification} \\
+\hline
+Software Usage & Application types & Identifies tools used by employees \\
+\hline
+Coding Patterns & Lines of code, file types & Gather coding practices \\
+\hline
+Code Repositories & Repository access, commits & Detects risky code commits \\
+\hline
+System Logs & Login attempts, file access & Tracks abnormal behavior \\
+\hline
+LMS Data & Training modules, assessments & Provides feedback \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Data Generation Techniques}
+For personalized cybersecurity training, we will use Python libraries, publicly available datasets for job profiles \cite{ref13}\cite{ref14}, code repositories \cite{ref15}, and simulated data.The following \ref{tab:techniques} outlines the techniques.
+
+
+\begin{table}[htbp]
+\caption{Data Generation Techniques}
+\label{tab:techniques}
+\begin{tabular}{|p{2cm}|p{5cm}|}
+\hline
+\textbf{Technique} & \textbf{Description} \\
+\hline
+Employee Profile Creation & Develop job profiles with different roles and experience levels\\
+\hline
+Work Pattern Simulation & Generate daily activity logs for different job roles using job descriptions \\
+\hline
+Software Usage Logs & Simulate commonly used software logs, including frequency, duration, and specific application actions \\
+\hline
+Code Repository Simulation & Generate synthetic code commits and repository interactions, incorporating both secure practices and common vulnerabilities \\
+\hline
+System Log Generation & Produces synthetic system logs events, such as login attempts, file operations, and security incidents \\
+\hline
+Anomaly Injection & Introduces anomalies (e.g., unauthorized access attempts, policy violations) to simulate potential security risks \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Challenges in Data Collection}
+The main challenge is gathering employee data on corporate devices as they have data related to sensitive intellectual property and information related to personally identifiable information (PII) and payment card industry (PCI) standards. Organizations cannot share this data, making it difficult to obtain for research. To overcome this limitation, we plan to generate datasets containing employee work patterns, software usage, and cybersecurity scenarios based on the job role to fine-tune the SLMs. This approach allows us to generate personalized cybersecurity training while complying with regulations.
+
+\subsection{Preliminary Analysis}
+Our preliminary analysis indicates that integrating diverse data sources, including software usage, coding patterns, and system logs, builds a comprehensive dataset for training language models to generate personalized cybersecurity training. Based on the literature review [6][8][9], the hybrid framework overcomes the limitations of current one-size-fits-all and AI-based training programs by tailoring content to individual employee roles and work patterns. The framework offers several key benefits: it accurately identifies training needs by analyzing employee work patterns, uses predictive analytics to identify potential security risks before they become serious incidents, maintains current cybersecurity training through continuous updates of both SLMs and the central LLM, and addresses privacy concerns through federated learning by keeping sensitive data on local devices.
+
+\section{Conclusion}
+This paper outlines the parameters for developing personalized cybersecurity training using the SLM-LLM hybrid framework. The holistic approach's main advantage is the integration of multiple data sources to create tailored training programs. While collecting real-world employee data presents challenges due to privacy regulations, the proposed synthetic data generation approach offers a viable alternative for future research.
+
+\begin{thebibliography}{16}
+\bibitem{ref1} D. Thinkerr, ``Data is the new gold, but efficiently mining it requires a philosophy of data,'' Jun. 2023. doi:10.31219/osf.io/npkx5
+
+\bibitem{ref2} W. C. Lin and D. Saebeler, ``Risk-Based V. Compliance-Based Utility Cybersecurity - A False Dichotomy?,'' Energy Law Journal, vol. 40, no. 2, pp. 243--282, 2019.
+
+\bibitem{ref3} Yadav, ``Designing Data Loss Prevention System for The Enhancement of Data Integrity in Cyberspace,'' p. pp 1361-1365, Dec. 2023.
+
+\bibitem{ref4} Shahad, Aljehani., Norah, Farooqi. ``A Systematic Literature Review on Security Challenges In A Hybrid Cloud Database.'' 11(1):10-13. doi: 10.14419/ijet.v11i1.31911, 2022.
+
+\bibitem{ref5} ``Database Engineer vs. Database Administrator,'' Indeed Career Guide. [Online].
+
+\bibitem{ref6} S. Jawhar, J. Miller, and Z. Bitar, ``AI-driven customized cyber security training and awareness,'' 2024 IEEE 3rd International Conference on AI in Cybersecurity (ICAIC), vol. 11, pp. 1--5, Feb. 2024.
+
+\bibitem{ref7} ``Cybersecurity awareness in Higher Education: A comparative analysis of faculty and staff,'' Issues In Information Systems, 2023.
+
+\bibitem{ref8} N. Al-Dhamari and N. Clarke, ``GPT-enabled cybersecurity training: A tailored approach for effective awareness,'' IFIP Advances in Information and Communication Technology, pp. 3--20, 2024.
+
+\bibitem{ref9} G. Wang, D. Tse, Y. Cui, and H. Jiang, ``An exploratory study on sustaining cyber security protection through Seta Implementation,'' Sustainability, vol. 14, no. 14, p. 8319, Jul. 2022.
+
+\bibitem{ref10} ``FEDMKT: Federated Mutual Knowledge Transfer for large and small language models.'' arXiv:2406.02224v1, 2024.
+
+\bibitem{ref11} Z. Hao et al., ``Hybrid SLM and LLM for Edge-Cloud Collaborative Inference,'' EdgeFM '24, June 2024.
+
+\bibitem{ref12} ``What it means to serve an LLM and which serving technology to choose from,'' Run.ai Blog. [Online]. Available: https://www.run.ai/blog/serving-large-language-models (accessed Oct. 6, 2024)
+
+
+\bibitem{ref13} ``Job Dataset,'' Kaggle, Sep. 17, 2023. [Online].
+
+\bibitem{ref14} Adepvenugopal, ``Logs Dataset,'' Kaggle, Sep. 03, 2022. [Online].
+
+\bibitem{ref15} ``LinkedIn job postings (2023 - 2024),'' Kaggle, Aug. 19, 2024. [Online].
+\end{thebibliography}
+
+\end{document}
