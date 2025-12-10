@@ -1,0 +1,211 @@
+================================================================================
+ZERO-TRUST PERSONALIZED CYBERSECURITY TRAINING - IEEE EVIDENCE
+================================================================================
+
+Generated: 2025-12-07 14:46:39
+Namespace: security-training
+Trust Domain: security-training.example.org
+
+
+================================================================================
+ARCHITECTURE
+================================================================================
+
+{
+  "cluster_info": "Kubernetes control plane is running at https://127.0.0.1:6443\nCoreDNS is running at https://127.0.0.1:6443/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy",
+  "pods": "NAME                              READY   STATUS    RESTARTS      AGE   IP             NODE             NOMINATED NODE   READINESS GATES\ngit-collector-5bdc9f57b7-nfhnv    1/1     Running   0             90s   10.1.1.161     docker-desktop   <none>           <none>\niam-collector-77d5fd676c-2m5m5    1/1     Running   0             73s   10.1.1.162     docker-desktop   <none>           <none>\njira-collector-55f95ff696-j99df   1/1     Running   0             69s   10.1.1.163     docker-desktop   <none>           <none>\nllm-gateway-57dfd87869-7ktm8      1/1     Running   0             57s   10.1.1.166     docker-desktop   <none>           <none>\nlms-68459bdb5b-b5pr4              1/1     Running   0             54s   10.1.1.167     docker-desktop   <none>           <none>\npostgres-6bd66c6f49-b67qf         1/1     Running   0             93m   10.1.1.154     docker-desktop   <none>           <none>\nrisk-scorer-6b6d8b664f-wxqhq      1/1     Running   0             62s   10.1.1.165     docker-desktop   <none>           <none>\nsiem-collector-5774ff6f84-sw4h2   1/1     Running   0             65s   10.1.1.164     docker-desktop   <none>           <none>\nspire-agent-bm8q4                 1/1     Running   2 (93m ago)   93m   192.168.65.3   docker-desktop   <none>           <none>\nspire-server-6fcd87476f-p7z26     1/1     Running   0             93m   10.1.1.153     docker-desktop   <none>           <none>",
+  "services": "NAME                 TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE\ngit-collector-svc    ClusterIP   10.100.58.164    <none>        8501/TCP   93m\niam-collector-svc    ClusterIP   10.96.196.84     <none>        8503/TCP   93m\njira-collector-svc   ClusterIP   10.97.11.56      <none>        8502/TCP   93m\nllm-gateway-svc      ClusterIP   10.102.184.106   <none>        8520/TCP   93m\nlms                  ClusterIP   10.110.178.35    <none>        8080/TCP   93m\npostgres-svc         ClusterIP   10.105.67.62     <none>        5432/TCP   93m\nrisk-scorer-svc      ClusterIP   10.109.27.54     <none>        8510/TCP   93m\nsiem-collector-svc   ClusterIP   10.97.102.192    <none>        8504/TCP   93m\nspire-server         ClusterIP   10.100.92.214    <none>        8081/TCP   93m",
+  "pod_counts": {
+    "collectors": "4",
+    "risk_scorer": "1",
+    "llm_gateway": "1",
+    "lms": "1",
+    "spire": "2"
+  }
+}
+
+================================================================================
+SPIRE INFRASTRUCTURE
+================================================================================
+
+{
+  "server_pod": "spire-server-6fcd87476f-p7z26",
+  "server_uptime": "2025-12-07T19:12:45Z",
+  "agent_info": "NAME                READY   STATUS    RESTARTS      AGE   IP             NODE             NOMINATED NODE   READINESS GATES\nspire-agent-bm8q4   1/1     Running   2 (93m ago)   93m   192.168.65.3   docker-desktop   <none>           <none>",
+  "total_entries": 7,
+  "spire_entries": "Found 7 entries\nEntry ID         : c2a23d89-8d83-4a5b-8238-d2fed1448d17\nSPIFFE ID        : spiffe://security-training.example.org/git-collector\nParent ID        : spiffe://security-training.example.org/spire/agent/k8s_psat/demo-cluster/2eaabae4-c68b-4b43-a8aa-473d536ab7c4\nRevision         : 0\nX509-SVID TTL    : default\nJWT-SVID TTL     : default\nSelector         : k8s:ns:security-training\nSelector         : k8s:sa:git-collector-sa\n\nEntry ID         : d88bf6d3-ad0c-4067-a124-73959c6791c8\nSPIFFE ID        : spiffe://security-training.example.org/iam-collector\nParent ID        : spiffe://security-training.example.org/spire/agent/k8s_psat/demo-cluster/2eaabae4-c68b-4b43-a8aa-473d536ab7c4\nRevision         : 0\nX509-SVID TTL    : default\nJWT-SVID TTL     : default\nSelector         : k8s:ns:security-training\nSelector         : k8s:sa:iam-collector-sa\n\nEntry ID         : 044b1504-3ad0-4242-995e-cbbac64a48a8\nSPIFFE ID        : spiffe://security-training.example.org/jira-collector\nParent ID        : spiffe://security-training.example.org/spire/agent/k8s_psat/demo-cluster/2eaabae4-c68b-4b43-a8aa-473d536ab7c4\nRevision         : 0\nX509-SVID TTL    : default\nJWT-SVID TTL     : default\nSelector         : k8s:ns:security-training\nSelector         : k8s:sa:jira-collector-sa\n\nEntry ID         : df3631bb-4e93-4810-ae48-92f0cfd04022\nSPIFFE ID        : spiffe://security-training.example.org/llm-gateway\nParent ID        : spiffe://security-training.example.org/spire/agent/k8s_psat/demo-cluster/2eaabae4-c68b-4b43-a8aa-473d536ab7c4\nRevision         : 0\nX509-SVID TTL    : default\nJWT-SVID TTL     : default\nSelector         : k8s:ns:security-training\nSelector         : k8s:sa:llm-gateway-sa\n\nEntry ID         : 1a784dc0-f790-4d82-b176-d2ea9d09bfcd\nSPIFFE ID        : spiffe://security-training.example.org/lms\nParent ID        : spiffe://security-training.example.org/spire/agent/k8s_psat/demo-cluster/2eaabae4-c68b-4b43-a8aa-473d536ab7c4\nRevision         : 0\nX509-SVID TTL    : default\nJWT-SVID TTL     : default\nSelector         : k8s:ns:security-training\nSelector         : k8s:sa:lms-sa\n\nEntry ID         : 832fa21f-480f-4d11-bd24-de80f46b94eb\nSPIFFE ID        : spiffe://security-training.example.org/risk-scorer\nParent ID        : spiffe://security-training.example.org/spire/agent/k8s_psat/demo-cluster/2eaabae4-c68b-4b43-a8aa-473d536ab7c4\nRevision         : 0\nX509-SVID TTL    : default\nJWT-SVID TTL     : default\nSelector         : k8s:ns:security-training\nSelector         : k8s:sa:risk-scorer-sa\n\nEntry ID         : 90113f10-1644-460f-bab4-65dd41edcaeb\nSPIFFE ID        : spiffe://security-training.example.org/siem-collector\nParent ID        : spiffe://security-training.example.org/spire/agent/k8s_psat/demo-cluster/2eaabae4-c68b-4b43-a8aa-473d536ab7c4\nRevision         : 0\nX509-SVID TTL    : default\nJWT-SVID TTL     : default\nSelector         : k8s:ns:security-training\nSelector         : k8s:sa:siem-collector-sa"
+}
+
+================================================================================
+CERTIFICATES
+================================================================================
+
+{
+  "services": {
+    "git-collector": {
+      "spiffe_id": "spiffe://security-training.example.org",
+      "has_certificate": true,
+      "serial_number": "20896403336205283307",
+      "not_valid_before": "2025-12-07T19:12:37+00:00",
+      "not_valid_after": "2025-12-08T19:12:47+00:00",
+      "mtls_enabled": true
+    },
+    "iam-collector": {
+      "spiffe_id": "spiffe://security-training.example.org",
+      "has_certificate": true,
+      "serial_number": "20896403336205283307",
+      "not_valid_before": "2025-12-07T19:12:37+00:00",
+      "not_valid_after": "2025-12-08T19:12:47+00:00",
+      "mtls_enabled": true
+    },
+    "siem-collector": {
+      "spiffe_id": "spiffe://security-training.example.org",
+      "has_certificate": true,
+      "serial_number": "20896403336205283307",
+      "not_valid_before": "2025-12-07T19:12:37+00:00",
+      "not_valid_after": "2025-12-08T19:12:47+00:00",
+      "mtls_enabled": true
+    },
+    "risk-scorer": {
+      "spiffe_id": "spiffe://security-training.example.org",
+      "has_certificate": true,
+      "serial_number": "20896403336205283307",
+      "not_valid_before": "2025-12-07T19:12:37+00:00",
+      "not_valid_after": "2025-12-08T19:12:47+00:00",
+      "mtls_enabled": true
+    },
+    "llm-gateway": {
+      "spiffe_id": "spiffe://security-training.example.org",
+      "has_certificate": true,
+      "serial_number": "20896403336205283307",
+      "not_valid_before": "2025-12-07T19:12:37+00:00",
+      "not_valid_after": "2025-12-08T19:12:47+00:00",
+      "mtls_enabled": true
+    },
+    "lms": {
+      "error": "No SPIFFE cert found"
+    }
+  },
+  "mtls_working_count": 5,
+  "total_services": 6
+}
+
+================================================================================
+RISK SCORING
+================================================================================
+
+{
+  "statistics": {
+    "total_users": 50,
+    "avg_risk_score": 0.277,
+    "min_risk_score": 0.02,
+    "max_risk_score": 0.4,
+    "high_risk_users": 0,
+    "medium_risk_users": 28,
+    "low_risk_users": 22
+  },
+  "event_counts": {
+    "git_events": 11811,
+    "iam_events": 2039,
+    "siem_events": 84,
+    "jira_events": 941,
+    "training_records": 210,
+    "total_events": 15085
+  }
+}
+
+================================================================================
+LLM GATEWAY
+================================================================================
+
+{
+  "connectivity_test": {
+    "mtls_available": false,
+    "spiffe_socket_exists": true,
+    "cert_files_count": 0,
+    "handler_importable": true
+  },
+  "recent_logs": "Requirement already satisfied: rsa<5,>=3.1.4 in /usr/local/lib/python3.11/site-packages (from google-auth>=2.15.0->google-generativeai>=0.3.0->-r /app/requirements.txt (line 17)) (4.9.1)\nRequirement already satisfied: six>=1.5 in /usr/local/lib/python3.11/site-packages (from python-dateutil>=2.8.2->pandas>=2.0.0->-r /app/requirements.txt (line 22)) (1.17.0)\nRequirement already satisfied: httplib2<1.0.0,>=0.19.0 in /usr/local/lib/python3.11/site-packages (from google-api-python-client->google-generativeai>=0.3.0->-r /app/requirements.txt (line 17)) (0.31.0)\nRequirement already satisfied: google-auth-httplib2<1.0.0,>=0.2.0 in /usr/local/lib/python3.11/site-packages (from google-api-python-client->google-generativeai>=0.3.0->-r /app/requirements.txt (line 17)) (0.2.1)\nRequirement already satisfied: uritemplate<5,>=3.0.1 in /usr/local/lib/python3.11/site-packages (from google-api-python-client->google-generativeai>=0.3.0->-r /app/requirements.txt (line 17)) (4.2.0)\nRequirement already satisfied: smmap<6,>=3.0.1 in /usr/local/lib/python3.11/site-packages (from gitdb<5,>=4.0.1->gitpython!=3.1.19,<4,>=3.0.7->streamlit>=1.29.0->-r /app/requirements.txt (line 20)) (5.0.2)\nRequirement already satisfied: grpcio-status<2.0.0,>=1.33.2 in /usr/local/lib/python3.11/site-packages (from google-api-core[grpc]!=2.0.*,!=2.1.*,!=2.10.*,!=2.2.*,!=2.3.*,!=2.4.*,!=2.5.*,!=2.6.*,!=2.7.*,!=2.8.*,!=2.9.*,<3.0.0dev,>=1.34.1->google-ai-generativelanguage==0.6.15->google-generativeai>=0.3.0->-r /app/requirements.txt (line 17)) (1.71.2)\nRequirement already satisfied: pyparsing<4,>=3.0.4 in /usr/local/lib/python3.11/site-packages (from httplib2<1.0.0,>=0.19.0->google-api-python-client->google-generativeai>=0.3.0->-r /app/requirements.txt (line 17)) (3.2.5)\nRequirement already satisfied: MarkupSafe>=2.0 in /usr/local/lib/python3.11/site-packages (from jinja2->altair!=5.4.0,!=5.4.1,<7,>=4.0->streamlit>=1.29.0->-r /app/requirements.txt (line 20)) (3.0.3)\nRequirement already satisfied: attrs>=22.2.0 i"
+}
+
+================================================================================
+PERSONALIZED TRAINING
+================================================================================
+
+{
+  "sample_high_risk_users": "",
+  "training_frequency_model": {
+    "low_risk": {
+      "range": "0.0-0.3",
+      "frequency": "Quarterly"
+    },
+    "medium_risk": {
+      "range": "0.3-0.7",
+      "frequency": "Monthly"
+    },
+    "high_risk": {
+      "range": "0.7-1.0",
+      "frequency": "Weekly/Urgent"
+    }
+  }
+}
+
+================================================================================
+SECURITY ANALYSIS
+================================================================================
+
+{
+  "authentication_method": "SPIFFE_X509_SVID_mTLS",
+  "trust_domain": "security-training.example.org",
+  "workload_identities": 7,
+  "mtls_coverage": "5/6",
+  "api_key_isolation": true,
+  "inter_service_credentials": 0,
+  "certificate_ttl_seconds": 3600,
+  "data_provenance_verified": true
+}
+
+================================================================================
+PERFORMANCE
+================================================================================
+
+{
+  "resource_usage": "Metrics not available",
+  "risk_scorer_response_ms": 143.82576942443848
+}
+
+================================================================================
+MATHEMATICAL MODEL
+================================================================================
+
+{
+  "formula": "R_u(t) = 0.30\u00d7S_git + 0.25\u00d7S_iam + 0.25\u00d7S_siem + 0.20\u00d7S_training",
+  "weights": {
+    "git": 0.3,
+    "iam": 0.25,
+    "siem": 0.25,
+    "training": 0.2
+  },
+  "sample_calculation": ""
+}
+
+================================================================================
+LIVE TRAINING TEST
+================================================================================
+
+{
+  "test_user": {},
+  "result": {
+    "success": true,
+    "test_type": "LMS \u2192 mTLS \u2192 LLM Gateway \u2192 Gemini API",
+    "mtls_handler_initialized": true,
+    "gateway_url": "https://llm-gateway-svc.security-training.svc.cluster.local:8520/generate",
+    "duration_seconds": 3.9040567874908447,
+    "model": "gemini-2.5-flash",
+    "backend": "gemini",
+    "content": "Here is your personalized security training summary:\n\n*   **Git Secret Prevention:** Immediately prioritize training on implementing pre-commit hooks, using credential managers, and integrating automated secret scanning tools to eliminate the critical risk of committing sensitive data.\n*   **Secure Git Workflow & Integrity:** Focus on advanced Git training covering secure branching strategies, the risks associated with force pushes, and the importance of branch protection rules to maintain code integrity and auditability.\n*   **Advanced IAM Security & Least Privilege:** Deep dive into secure IAM role design, least privilege enforcement, and understanding common privilege escalation attack paths to bolster your ability to prevent and detect such attempts within your environment.",
+    "content_length": 788,
+    "mtls_verified": true
+  },
+  "test_type": "LMS \u2192 mTLS \u2192 LLM Gateway \u2192 Gemini API"
+}

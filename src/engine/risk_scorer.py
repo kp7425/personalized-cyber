@@ -198,7 +198,8 @@ class RiskScorer(BaseSPIFFEAgent):
         for source in self.sources:
             source_scores[source] = self._calculate_source_score(
                 source, 
-                source_stats.get(source, {})
+                source_stats.get(source, {}),
+                user_id
             )
         
         # Weighted sum: R_overall = Σᵢ wᵢ × Rᵢ
@@ -232,21 +233,104 @@ class RiskScorer(BaseSPIFFEAgent):
             "calculated_at": datetime.utcnow().isoformat()
         }
     
-    def _calculate_source_score(self, source: str, stats: dict) -> float:
+    def _calculate_source_score(self, source: str, stats: dict, user_id: str = None) -> float:
         """
         Calculate normalized score for a single source.
         
-        Rₛ(u,t) = min(1.0, Σⱼ αⱼ × count(eventⱼ))
+        Uses threshold-based normalization:
+        Rₛ(u,t) = Σⱼ (αⱼ × min(1.0, count(eventⱼ) / threshold(eventⱼ)))
+        
+        This ensures scores are properly normalized to [0,1] based on
+        expected event counts, not raw counts.
         """
+        if source == "training":
+            # Training score comes from training_completions table
+            return self._calculate_training_score(user_id, stats)
+        
+        # Thresholds for normalization - events above threshold = 1.0
+        THRESHOLDS = {
+            "git": {
+                "secrets_committed": 3,      # 3+ secrets = 1.0
+                "force_push": 5,             # 5+ force pushes = 1.0
+                "commits_without_review": 10,
+                "vulnerable_deps": 5,
+                "large_file_addition": 10
+            },
+            "iam": {
+                "privilege_escalation": 10,   # 10+ priv events = 1.0
+                "service_account_key_creation": 5,
+                "off_hours_access": 10,
+                "unused_permissions": 20,
+                "cross_account_access": 5
+            },
+            "siem": {
+                "malware_detection": 2,       # 2+ malware = 1.0
+                "phishing_click": 3,
+                "failed_auth_attempts": 20,
+                "policy_violation": 5,
+                "data_exfiltration_alert": 1
+            }
+        }
+        
         severity_weights = EVENT_SEVERITY.get(source, {})
+        thresholds = THRESHOLDS.get(source, {})
         
         score = 0.0
         for event_type, weight in severity_weights.items():
-            # Map event type to stats key
             count = self._get_event_count(source, event_type, stats)
-            score += weight * count
+            threshold = thresholds.get(event_type, 5)  # default threshold
+            
+            # Normalize: count/threshold, capped at 1.0
+            normalized_count = min(1.0, count / threshold) if threshold > 0 else 0
+            score += weight * normalized_count
         
         return min(1.0, score)
+    
+    def _calculate_training_score(self, user_id: str, jira_stats: dict) -> float:
+        """
+        Calculate training gap score from training_completions table.
+        
+        Low score = good training compliance
+        High score = incomplete or outdated training
+        """
+        try:
+            if not user_id:
+                return 0.5  # Default middle score
+                
+            # Get actual training data from training_completions
+            training_data = Database.fetch_one("""
+                SELECT 
+                    COUNT(*) as total_modules,
+                    COUNT(*) FILTER (WHERE passed = true) as passed_modules,
+                    MAX(completed_at) as last_training,
+                    AVG(score) as avg_score
+                FROM training_completions
+                WHERE user_id = %s
+                AND completed_at > NOW() - INTERVAL '180 days'
+            """, (user_id,))
+            
+            if not training_data or training_data.get('total_modules', 0) == 0:
+                # No training in 180 days = high risk
+                return 0.8
+            
+            total = training_data.get('total_modules', 0)
+            passed = training_data.get('passed_modules', 0)
+            avg_score = float(training_data.get('avg_score', 0) or 0)
+            
+            # Calculate training score (lower = better)
+            if total >= 8 and passed >= 7 and avg_score >= 80:
+                return 0.05  # Very well trained (DevSecOps, Security Analysts)
+            elif total >= 5 and passed >= 4:
+                return 0.2  # Well trained
+            elif total >= 3:
+                return 0.4  # Some training
+            else:
+                return 0.7  # Needs training
+                
+        except Exception:
+            # Fall back to Jira-based training gap
+            overdue = jira_stats.get('overdue_tasks', 0) or 0
+            return min(1.0, overdue * 0.1)
     
     def _get_event_count(self, source: str, event_type: str, stats: dict) -> int:
         """Map event types to actual stats fields."""
@@ -320,9 +404,9 @@ class RiskScorer(BaseSPIFFEAgent):
             multiplier = max(multiplier, 2.0)
             self.logger.warning("🚨 Compromised account pattern detected")
         
-        # Burnout pattern
-        if (git_stats.get("force_pushes", 0) > 3 and
-            source_stats.get("training", {}).get("overdue_tasks", 0) > 5):
+        # Burnout pattern - only on extreme cases
+        if (git_stats.get("force_pushes", 0) > 10 and
+            source_stats.get("training", {}).get("overdue_tasks", 0) > 15):
             multiplier = max(multiplier, 1.2)
             self.logger.info("📊 Burnout pattern detected")
         

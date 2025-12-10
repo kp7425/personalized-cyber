@@ -1,0 +1,55 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ieee-data-seeder
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: ieee-data-seeder
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "10"
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: ieee-data-seeder
+    spec:
+      restartPolicy: OnFailure
+      initContainers:
+      # Wait for PostgreSQL to be ready
+      - name: wait-for-postgres
+        image: busybox:1.35
+        command: ['sh', '-c', 'until nc -z postgres-svc 5432; do echo "Waiting for PostgreSQL..."; sleep 2; done; echo "PostgreSQL is ready!"']
+      # Wait for SPIRE registration
+      - name: wait-for-spire
+        image: bitnami/kubectl:latest
+        command: ['sh', '-c']
+        args:
+          - |
+            echo "Waiting for SPIRE registration job..."
+            kubectl wait --for=condition=complete job/spire-registration -n {{ .Values.global.namespace }} --timeout=120s || true
+            echo "SPIRE registration complete (or timed out)"
+      containers:
+      - name: seeder
+        image: security-training:latest
+        imagePullPolicy: Never
+        command: ['python3', '/app/src/utils/ieee_data_seeder.py']
+        env:
+        - name: DB_HOST
+          value: "postgres-svc"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_NAME
+          value: "{{ .Values.database.name }}"
+        - name: DB_USER
+          value: "{{ .Values.database.user }}"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Values.database.passwordSecret }}"
+              key: "{{ .Values.database.passwordKey }}"
+      serviceAccountName: risk-scorer-sa

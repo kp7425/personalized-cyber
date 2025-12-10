@@ -84,6 +84,45 @@ kubectl port-forward svc/lms 8080:8080 -n security-training
 open http://localhost:8080
 ```
 
+The system automatically:
+1. Creates PostgreSQL database with PVC (persistent storage)
+2. Seeds 50 users with IEEE paper role distribution (12 Backend Devs, 4 DevSecOps, 3 Security Analysts, etc.)
+3. Generates 30 days of behavioral events (Git, Jira, IAM, SIEM)
+4. Calculates risk scores using the threshold-normalized formula
+
+## 🔬 IEEE Paper Reproducibility
+
+This system is designed for reproducible research. On fresh deployment:
+
+### Automated Data Seeding
+The `ieee-data-seeder` Kubernetes Job runs automatically after Helm install and generates:
+
+| Data Type | Count | Description |
+|-----------|-------|-------------|
+| Users | 50 | 8 role types (Backend Dev, DevSecOps, Security Analyst, etc.) |
+| Git Events | ~15,000 | Commits, force pushes, secret detection |
+| IAM Events | ~3,500 | AWS/GCP/Azure privileged actions |
+| SIEM Alerts | ~200 | Phishing, malware, policy violations |
+| Jira Events | ~900 | Security tickets, overdue tasks |
+| Training Records | ~200 | Module completions with scores |
+
+### Reproducible Random Seeds
+Data generation uses fixed seeds (`Faker.seed(42)`, `random.seed(42)`) ensuring identical datasets across deployments.
+
+### Expected Risk Distribution
+After seeding:
+- **High Risk (≥0.7)**: ~28 users (Backend Devs, DevOps, Data Engineers)
+- **Medium Risk (0.3-0.7)**: ~15 users (Frontend, Data Analysts)
+- **Low Risk (<0.3)**: ~7 users (DevSecOps, Security Analysts - control group)
+
+### Re-seeding Data
+```bash
+# Delete the job and PVC to reseed
+kubectl delete job ieee-data-seeder -n security-training
+kubectl delete pvc postgres-pvc -n security-training
+helm upgrade security-system ./helm/security-training
+```
+
 ## 📖 Documentation
 
 | Document | Description |
